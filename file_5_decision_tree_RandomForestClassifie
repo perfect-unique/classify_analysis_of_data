@@ -1,0 +1,82 @@
+#验证曲线(调超级参数)，学习曲线（用来调到最好效果的参数即训练集）
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+import sklearn.preprocessing as sp
+
+import sklearn.ensemble as se
+import sklearn.model_selection as ms
+import sklearn.model_selection as sm
+
+
+#整理样本空间，输入与输出集
+data = pd.read_excel('D:\worksp\car_classify.xlsx')
+
+data = np.array(data)
+# print(data.T)
+# print((len(data.T) - 1))
+train_x, train_y = [], []
+encoders = []#存储标签编码器
+for index, row in enumerate(data.T):
+    row = row.astype(str)
+    encoder = sp.LabelEncoder()
+    if index < (len(data.T) - 1):
+        train_x.append(encoder.fit_transform(row))
+    else:
+        train_y = encoder.fit_transform(row)
+    encoders.append(encoder)
+train_x = np.array(train_x).T
+train_y = np.array(train_y)
+# print(train_x)
+# print(train_x.shape, train_y.shape)
+# print(train_x[1], train_y[1])
+#随机森林分类器
+model = se.RandomForestClassifier(max_depth=3, n_estimators=150, random_state=7)
+#验证曲线
+# train_score, test_score = ms.validation_curve(model, train_x, train_y, 'n_estimators', np.arange(50, 550, 50), cv=5)
+# train_score, test_score = ms.validation_curve(model, train_x, train_y, 'max_depth', np.arange(1, 11, 1), cv=5)
+# print(test_score.mean(axis=1))
+# plt.grid(linestyle=':')
+# plt.plot(np.arange(1, 11, 1), test_score.mean(axis=1), 'o-', color='blue', label='validation curve')
+# plt.legend()
+# plt.show()
+#学习曲线
+train_size = np.arange(0.1, 1.0, 0.1)
+_, train_score, test_scores = ms.learning_curve(model, train_x, train_y, train_sizes=train_size, cv=5)
+test_mean = test_scores.mean(axis=1)
+print()
+plt.grid(linestyle=':')
+plt.plot(train_size, test_mean, 'o-', color='blue', label='validation curve')
+plt.legend()
+plt.show()
+#交叉验证
+# score = ms.cross_val_score(model, train_x, train_y, cv=5, scoring='f1_weighted')
+# print(score.mean())
+# model.fit(train_x, train_y)
+# #预测数据
+# data = [
+#     ['high', 'vhigh', '2', '4', 'big', 'low', 'unacc'],
+#     ['high', 'high', '4', '4', 'med', 'med', 'acc'],
+#     ['med', 'low', '2', '4', 'small', 'high', 'good'],
+#     ['vhigh', 'low', '3', '4', 'med', 'high', 'vgood']]
+# data = np.array(data)
+# # print(data)
+# test_x, test_y = [], []
+# for index, row in enumerate(data.T):
+#     encoder = encoders[index]
+#     # row = row.astype(str)
+#
+#     if index < (len(data.T) - 1):
+#         test_x.append(encoder.transform(row))
+#     else:
+#         test_y = encoder.transform(row)
+# test_x = np.array(test_x).T
+# # print(test_x)
+# test_y = np.array(test_y)
+# # print(test_x.shape, test_y.shape)
+# predict_r = model.predict(test_x)
+# print(test_y)
+# print(predict_r)
+# print(encoders[-1].inverse_transform(test_y))
+# print(encoders[-1].inverse_transform(predict_r))
