@@ -1,0 +1,41 @@
+#逻辑分类解决多元分类问题
+import numpy as np
+import matplotlib.pyplot as plt
+import sklearn.metrics as sm
+x = np.array([[4, 7], [3.6, 8], [3.1, 6.2], [0.5, 1], [1, 2], [1.2, 1.9], [6.2, 2], [5.7, 1.5], [5.4, 2.2],
+              [3, 3.5], [2, 2.4], [4, 3.9]])
+y = np.array([0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3])
+
+#通过样本训练分类器api
+import sklearn.linear_model as lm
+model = lm.LogisticRegression(solver='liblinear', C=100)
+model.fit(x, y)
+#预测模型，预测新样本
+predict_r = model.predict([[3, 9], [4, 5]])
+print(predict_r)
+
+
+#处理数据,并绘制分类边界线
+left, right = x[:, 0].min()-1, x[:, 0].max()+1
+b, top = x[:, 1].min()-1, x[:, 1].max()+1
+n = 500
+grid_x, grid_y = np.meshgrid(np.linspace(left, right, n), np.linspace(b, top, n))
+print(grid_x.shape)
+print(grid_y.shape)
+
+
+mesh_x = np.column_stack((grid_x.ravel(), grid_y.ravel()))
+print(mesh_x.shape)
+mesh_z = model.predict(mesh_x)
+print(mesh_z.shape)
+grid_z = mesh_z.reshape(grid_x.shape)
+
+#画图
+plt.figure('LR Classification', facecolor='lightgray')
+plt.title('LR Classification', fontsize=16)
+plt.scatter(x[:, 0], x[:, 1], c=y, cmap='jet', label='Simple Points', s=70,  zorder=3)
+#绘制分类边界线，根据参数，吧可视区间拆分成坐标网格，cmap填充颜色
+plt.pcolormesh(grid_x, grid_y, grid_z, cmap='gray')
+plt.legend()
+plt.tight_layout()
+plt.show()
