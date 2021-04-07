@@ -1,0 +1,64 @@
+#基于核函数的升维变换，使得样本在低维度上的线性不可分变为在多维上线性可分，从而达成分类业务
+
+import numpy as np
+import sklearn.naive_bayes as nb
+import matplotlib.pyplot as plt
+import pandas as pd
+import sklearn.svm as svm
+import sklearn.metrics as sm
+#读取文件
+data = pd.read_excel('D:\worksp\model4.xlsx')
+# print(data)
+
+x = data.iloc[:, :2].astype('f8')
+x = x.values.reshape(-2, 2)
+y = data.iloc[:, -1].astype('f8')
+# print(y)
+# #数据划分
+import sklearn.model_selection as ms
+train_x, test_x, train_y, test_y = ms.train_test_split(x, y, test_size=0.65, random_state=7)
+print(test_y)
+#构建高斯朴素贝叶斯模型
+# model = nb.GaussianNB()
+# model.fit(x, y)
+#构建SVM模型
+#核函数，1.线性核函数（kernel=‘linear’）2.多项式核函数（kernel='poly,degree=3,）。3.径向基函数(kernel='rbf',C=正则强度， gamma=0.01)。
+model = svm.SVC(kernel='rbf', C=300, gamma=0.01)
+# model = svm.SVC(kernel='linear')
+# model = svm.SVC(kernel='goly', degree=3)
+model.fit(train_x, train_y)
+#根据预测模型测试新数据
+predict_r = model.predict(test_x)
+print(sm.classification_report(test_y, predict_r))
+#混淆矩阵
+cm = sm.confusion_matrix(test_y, predict_r)
+print(cm)
+# #准确值
+# acc = (test_y == predict_r).sum() / test_y.size
+# print(acc)
+
+#处理数据,并绘制分类边界线
+left, right = x[:, 0].min()-1, x[:, 0].max()+1
+b, top = x[:, 1].min()-1, x[:, 1].max()+1
+n = 500
+grid_x, grid_y = np.meshgrid(np.linspace(left, right, n), np.linspace(b, top, n))
+print(grid_x.shape)
+print(grid_y.shape)
+
+
+mesh_x = np.column_stack((grid_x.ravel(), grid_y.ravel()))
+print(mesh_x.shape)
+mesh_z = model.predict(mesh_x)
+print(mesh_z.shape)
+grid_z = mesh_z.reshape(grid_x.shape)
+print(grid_z)
+#画分类图
+plt.figure('svm Classification', facecolor='lightgray')
+plt.title('svm Classification', fontsize=16)
+# plt.scatter(test_x[:, 0], test_x[:, 1], c=test_y, cmap='jet', label='Simple Points', s=70,  zorder=3)
+plt.scatter(x[:, 0], x[:, 1], c=y, cmap='jet', label='Simple Points', s=70,  zorder=3)
+#绘制分类边界线，根据参数，吧可视区间拆分成坐标网格，cmap填充颜色
+plt.pcolormesh(grid_x, grid_y, grid_z, cmap='gray')
+plt.legend()
+plt.tight_layout()
+plt.show()
