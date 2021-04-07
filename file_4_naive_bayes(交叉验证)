@@ -1,0 +1,78 @@
+#交叉验证(处理异常样本)、分析报告(评估指标)、混淆矩阵（评估指标）
+import numpy as np
+import sklearn.naive_bayes as nb
+import matplotlib.pyplot as plt
+import pandas as pd
+
+
+#读取文件
+data = pd.read_excel('D:\worksp\model4..xlsx')
+# print(data)
+
+x = data.iloc[:, :2].astype('f8')
+x = x.values.reshape(-2, 2)
+print(x)
+y = data.iloc[:, -1].astype('f8')
+# print(y)
+#数据划分
+import sklearn.model_selection as ms
+train_x, test_x, train_y, test_y = ms.train_test_split(x, y, test_size=0.2, random_state=7)
+# print(test_x)
+#构建高斯朴素贝叶斯模型
+model = nb.GaussianNB()
+#交叉验证
+acc_scare = ms.cross_val_score(model, train_x, train_y, cv=5, scoring='accuracy')#精准度
+print(acc_scare.mean())
+acc_scare = ms.cross_val_score(model, train_x, train_y, cv=5, scoring='precision_weighted')#查准率
+print(acc_scare.mean())
+acc_scare = ms.cross_val_score(model, train_x, train_y, cv=5, scoring='recall_weighted')#召回率
+print(acc_scare.mean())
+acc_scare = ms.cross_val_score(model, train_x, train_y, cv=5, scoring='f1_weighted')#f1
+print(acc_scare.mean())
+
+
+model.fit(train_x, train_y)
+#根据预测模型测试新数据
+predict_r = model.predict(test_x)
+# print(predict_r)
+#混淆矩阵
+import sklearn.metrics as sm
+cm = sm.confusion_matrix(test_y, predict_r)
+print(cm)
+#获取分析报告
+#精准度（accuracy）、查准率（precision_weighted）、召回率（recall_weighted）、f1得分（f1_weighted）:2*查准率*召回率/（查准率+召回率）
+cp = sm.classification_report(test_y, predict_r)
+print(cp)
+# print(cp)
+
+#准确值
+# acc = (test_y == predict_r).sum() / test_y.size
+# print(acc)
+
+#处理数据,并绘制分类边界线
+left, right = x[:, 0].min()-1, x[:, 0].max()+1
+b, top = x[:, 1].min()-1, x[:, 1].max()+1
+n = 500
+grid_x, grid_y = np.meshgrid(np.linspace(left, right, n), np.linspace(b, top, n))
+print(grid_x.shape)
+print(grid_y.shape)
+
+
+mesh_x = np.column_stack((grid_x.ravel(), grid_y.ravel()))
+# print(mesh_x.shape)
+mesh_z = model.predict(mesh_x)
+# print(mesh_z.shape)
+grid_z = mesh_z.reshape(grid_x.shape)
+# print(grid_z)
+#画分类图
+plt.figure('LR Classification', facecolor='lightgray')
+plt.title('LR Classification', fontsize=16)
+plt.scatter(test_x[:, 0], test_x[:, 1], c=test_y, cmap='jet', label='Simple Points', s=70,  zorder=3)
+#绘制分类边界线，根据参数，吧可视区间拆分成坐标网格，cmap填充颜色
+
+# plt.scatter(x[:, 0], x[:, 1], c=y, cmap='jet', label='Simple Points', s=70,  zorder=3)
+plt.pcolormesh(grid_x, grid_y, grid_z, cmap='gray')
+
+plt.legend()
+plt.tight_layout()
+plt.show()
